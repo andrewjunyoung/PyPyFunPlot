@@ -1,10 +1,8 @@
-#from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
-
 import networkx as nx
 import plotly
 import plotly.graph_objs as go
 import random
-
+import re
 
 def get_unique_fun_from_dict(fun_dict):
     all_funs = set()
@@ -18,8 +16,12 @@ def get_digraph_from_dict(fun_dict):
     g = nx.DiGraph()
 
     #Add all nodes
-    all_funs = get_unique_fun_from_dict(fun_dict)
-    [g.add_node(fun, x=random.uniform(0, 1), y=random.uniform(0, 1)) for fun in all_funs]
+    all_funs_with_classes = get_unique_fun_from_dict(fun_dict)
+    for fun in all_funs_with_classes:
+        maybe_class = re.match(r'(\w+\.)', fun) #None if no class
+        if maybe_class:
+            maybe_class = maybe_class.group(0) #Change SRE_Match into string
+        g.add_node(fun, fun_class=maybe_class, x=random.uniform(0, 1), y=random.uniform(0, 1))
 
     #Add edges
     for key in fun_dict.keys():
@@ -37,21 +39,15 @@ def plot_digraph(g):
         mode='markers',
         hoverinfo='text',
         marker=dict(
-            colorscale='Bluered',
+            colorscale='Rainbow',
             color=[],
-            showscale=True,
             size=[],
-            colorbar=dict(
-                thickness=15,
-                title='Nr functions called by',
-                xanchor='left',
-                titleside='right'
-                ),
             line=dict(width=2)
         ),
     )
 
     page_ranks = nx.pagerank(g)
+    unique_classes = []
 
     for node in g.nodes():
         x = g.node[node]['x']
@@ -61,6 +57,13 @@ def plot_digraph(g):
         node_trace['y'] += tuple([y])
         node_trace['text'] += tuple([node_name])
         node_trace['marker']['size'] += tuple([page_ranks[node]*1000])
+
+        #Set node colour based on class
+        node_class = g.node[node]['fun_class']
+        if node_class not in unique_classes:
+            unique_classes.append(node_class)
+        node_class_as_nr = unique_classes.index(node_class)
+        node_trace['marker']['color'] += tuple([node_class_as_nr])
 
     #Add edges
     edge_dict_list = []
