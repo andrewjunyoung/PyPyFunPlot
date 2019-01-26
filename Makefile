@@ -1,6 +1,6 @@
 .PHONY: clean
 
-FILE="src/network_vis.py"
+FILE="src/main.py"
 
 all:
 	sudo python3 $(FILE)
