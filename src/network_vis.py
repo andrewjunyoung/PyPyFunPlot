@@ -21,8 +21,23 @@ def get_digraph_from_dict(fun_dict):
         maybe_class = re.match(r'(\w+\.)', fun) #None if no class
         if maybe_class:
             maybe_class = maybe_class.group(0) #Change SRE_Match into string
-        g.add_node(fun, fun_class=maybe_class, x=random.uniform(0, 1), y=random.uniform(0, 1))
+        g.add_node(fun, fun_class=maybe_class, x=0, y=0)
 
+    #Cluster nodes by class
+    unique_classes = {}
+    for node in g.nodes():
+        node_class = g.node[node]['fun_class']
+        if node_class not in unique_classes:
+            unique_classes[node_class] = (random.uniform(0, 1), random.uniform(0, 1)) #cluster centre (x,y)
+    
+    sigma = 0.15
+    for node in g.nodes():
+        node_class = g.node[node]['fun_class']
+        class_x, class_y = unique_classes[node_class]
+        g.node[node]['x'] = random.gauss(class_x, sigma)
+        g.node[node]['y'] = random.gauss(class_y, sigma)
+        
+     
     #Add edges
     for key in fun_dict.keys():
         for called_fun in fun_dict[key]:
