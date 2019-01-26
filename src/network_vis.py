@@ -5,12 +5,7 @@ import plotly
 import plotly.graph_objs as go
 import random
 
-mydict =	{
-  "fun1": ["fun2", "fun2", "fun3", "fun5", "fun6"],
-  "fun2": ["fun3", "fun5"],
-  "fun3": [],
-  "fun4": ["funprint"]
-}
+mydict = {'get_occurrences': ['tqdm', 'range', 'len'], '_get_words': ['findall'], 'is_fun_definition_of': ['match'], 'get_indentation': ['match'], 'get_re_len': ['len', 're_match.group'], 'fix_indentation_by': [], 'get_fun_lines': ['fix_indentation_by', 'Parser.is_deeper_than', 'fun_lines.append', 'fix_indentation_by'], '_get_fun_names': ['_get_words', '_get_occurrences', 'tqdm'], '_get_fun_calls': ['parse'], 'is_deeper_than': ['get_re_len', 'match', 'str'], '_get_body_of': ['contents.splitlines', 'enumerate', 'is_fun_definition_of', 'get_re_len', 'get_fun_lines', 'print', 'join', 'get_indentation'], 'get_call_network': ['open', 'file.read'], '__init_': ['deque'], 'name': ['join'], 'visit_Name': ['self._name.appendleft'], 'visit_Attribute': ['self._name.appendleft', 'self._name.appendleft', 'self.generic_visit']}
 
 def get_unique_fun_from_dict(fun_dict):
     all_funs = set()
@@ -48,7 +43,7 @@ def plot_digraph(g):
             colorscale='Bluered',
             color=[],
             showscale=True,
-            size=20,
+            size=[],
             colorbar=dict(
                 thickness=15,
                 title='Nr functions called by',
@@ -59,6 +54,8 @@ def plot_digraph(g):
         ),
     )
 
+    page_ranks = nx.pagerank(g)
+
     for node in g.nodes():
         x = g.node[node]['x']
         y = g.node[node]['y']
@@ -66,9 +63,7 @@ def plot_digraph(g):
         node_trace['x'] += tuple([x])
         node_trace['y'] += tuple([y])
         node_trace['text'] += tuple([node_name])
-
-    for node, adj in enumerate(g.adjacency()):
-        node_trace['marker']['color'] += tuple([len(adj[1])])
+        node_trace['marker']['size'] += tuple([page_ranks[node]*1000])
 
     #Add edges
     edge_dict_list = []
