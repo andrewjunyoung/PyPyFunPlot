@@ -5,13 +5,6 @@ import plotly
 import plotly.graph_objs as go
 import random
 
-#mydict =	{
-#  "fun1": ["fun2", "fun2", "fun3", "fun5", "fun6"],
-#  "fun2": ["fun3", "fun5"],
-#  "fun3": [],
-#  "fun4": ["funprint"]
-#}
-
 mydict = {'_get_occurrences': ['tqdm', 'range', 'len'], '_get_words': ['findall'], 'is_fun_definition_of': ['match'], 'get_indentation': ['match'], 'get_re_len': ['len', 're_match.group'], 'fix_indentation_by': [], 'get_fun_lines': ['fix_indentation_by', 'Parser.is_deeper_than', 'fun_lines.append', 'fix_indentation_by'], '_get_fun_names': ['_get_words', '_get_occurrences', 'tqdm'], '_get_fun_calls': ['parse'], 'is_deeper_than': ['get_re_len', 'match', 'str'], '_get_body_of': ['contents.splitlines', 'enumerate', 'is_fun_definition_of', 'get_re_len', 'get_fun_lines', 'print', 'join', 'get_indentation'], 'get_call_network': ['open', 'file.read'], '__init__': ['deque'], 'name': ['join'], 'visit_Name': ['self._name.appendleft'], 'visit_Attribute': ['self._name.appendleft', 'self._name.appendleft', 'self.generic_visit']}
 
 def get_unique_fun_from_dict(fun_dict):
@@ -28,14 +21,12 @@ def get_digraph_from_dict(fun_dict):
     #Add all nodes
     all_funs = get_unique_fun_from_dict(fun_dict)
     [g.add_node(fun, x=random.uniform(0, 1), y=random.uniform(0, 1)) for fun in all_funs]
-    
+
     #Add edges
     for key in fun_dict.keys():
         for called_fun in fun_dict[key]:
             g.add_edge(key, called_fun)
     return g
-
-g = get_digraph_from_dict(mydict)
 
 def plot_digraph(g):
 
@@ -92,9 +83,8 @@ def plot_digraph(g):
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                 annotations = edge_dict_list
-             )                
+             )
     )
 
     plotly.offline.plot(fig, filename='networkx')
 
-plot_digraph(g)

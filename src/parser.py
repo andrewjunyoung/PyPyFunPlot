@@ -74,12 +74,8 @@ class Parser(object):
         lines = contents.splitlines()
         for i, line in enumerate(lines):
             if is_fun_definition_of(fun_name, line):
-                # Pre: this definition is unique
-
-                # Get the body of the function
                 indent_level = get_re_len(get_indentation(line))
                 fun_lines = get_fun_lines(i, lines, indent_level)
-                print("lines:", fun_lines)
                 fun_body = "\n".join(fun_lines)
 
                 return fun_body
@@ -102,7 +98,6 @@ class Parser(object):
         # }
         file.close()
 
-        print(call_network)
         return call_network
 
 
@@ -128,6 +123,3 @@ class FuncCallVisitor(NodeVisitor):
         except AttributeError:
             self.generic_visit(node)
 
-
-if __name__ == "__main__":
-    Parser.get_call_network("./parser.py")
