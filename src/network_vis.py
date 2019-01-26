@@ -5,8 +5,6 @@ import plotly
 import plotly.graph_objs as go
 import random
 
-mydict = {'_get_occurrences': ['tqdm', 'range', 'len'], '_get_words': ['findall'], 'is_fun_definition_of': ['match'], 'get_indentation': ['match'], 'get_re_len': ['len', 're_match.group'], 'fix_indentation_by': [], 'get_fun_lines': ['fix_indentation_by', 'Parser.is_deeper_than', 'fun_lines.append', 'fix_indentation_by'], '_get_fun_names': ['_get_words', '_get_occurrences', 'tqdm'], '_get_fun_calls': ['parse'], 'is_deeper_than': ['get_re_len', 'match', 'str'], '_get_body_of': ['contents.splitlines', 'enumerate', 'is_fun_definition_of', 'get_re_len', 'get_fun_lines', 'print', 'join', 'get_indentation'], 'get_call_network': ['open', 'file.read'], '__init__': ['deque'], 'name': ['join'], 'visit_Name': ['self._name.appendleft'], 'visit_Attribute': ['self._name.appendleft', 'self._name.appendleft', 'self.generic_visit']}
-
 def get_unique_fun_from_dict(fun_dict):
     all_funs = set()
     for key in fun_dict.keys():

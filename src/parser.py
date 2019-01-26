@@ -5,24 +5,16 @@ from ast import Call, parse, NodeVisitor, walk
 from collections import deque
 from itertools import takewhile
 
-
-def _get_occurrences(list, item):
-    return [i
-            for i in tqdm(range(len(list)), file = stdout)
-            if list[i] == item]
-
-
-def _get_words(text):
-    return [word
-            for word in findall(r"[^\s\(\)]+", text)]
+def get_occurrences(lines, str):
+    indexes = []
+    for i, line in enumerate(lines):
+        if match(r"\s*" + str + "\s", line):
+            indexes.append(i)
+    return indexes
 
 
-def is_fun_definition_of(fun_name, line):
-    return match(r"\s*def " + fun_name + r".+", line)
-
-
-def get_indentation(line):
-    return match("(\s*)", line)
+def get_indent_level(line):
+    return get_re_len(match(r"(\s*)", line))
 
 
 def get_re_len(re_match):
@@ -36,46 +28,85 @@ def fix_indentation_by(indent_level, lines):
     return [line[indent_level + 4:] for line in lines]
 
 
-def get_fun_lines(i, lines, indent_level):
-    fun_lines = []
-    for line in lines[i + 1:]:
-        if Parser.is_deeper_than(indent_level, line):
-            fun_lines.append(line)
-        else:
-            return fix_indentation_by(indent_level, fun_lines)
-    return fix_indentation_by(indent_level, fun_lines)
-
-
 class Parser(object):
-    def _get_fun_names(contents):
-        words = _get_words(contents)
-        def_occurrences = _get_occurrences(words, "def")
-        fun_names = [words[i + 1]
-                     for i in tqdm(def_occurrences, file = stdout)]
+    def is_fun_def_of(fun_name, line):
+        return match(r"\s*def " + fun_name + r".+", line)
+
+    def get_fun_lines(i, lines, indent_level):
+        fun_lines = []
+        for line in lines[i + 1:]:
+            if Parser.is_deeper_than(indent_level, line):
+                fun_lines.append(line)
+            else:
+                return fix_indentation_by(indent_level, fun_lines)
+        return fix_indentation_by(indent_level, fun_lines)
+
+
+    def get_class_name(i, lines):
+        indent_level = get_indent_level(lines[i])
+
+        if indent_level == 0:
+            return ""
+
+        for line in lines[i - 1::-1]:
+            if Parser.is_shallower_than(indent_level, line):
+                re_match = match(r"\s*class (\w+)", line)
+                if re_match:
+                    return re_match.group(1)
+                else:
+                    return ""
+        return ""
+
+    def get_fun_name_from_def(line):
+        return match(r"\s*def (\w+)", line).group(1)
+
+    def get_fun_names(contents):
+        lines = contents.splitlines()
+        def_occurrences = get_occurrences(lines, "def")
+
+        fun_names = []
+        for index in tqdm(def_occurrences, file = stdout):
+            prev_lines = lines[:index]
+            class_name = Parser.get_class_name(index, lines)
+            method_name = Parser.get_fun_name_from_def(lines[index])
+            if len(class_name) > 0:
+                fun_names.append(class_name + "." + method_name)
+            else:
+                fun_names.append(method_name)
+
         return fun_names
 
-    def _get_fun_calls(contents):
+    def get_fun_calls(contents):
         tree = parse(contents)
 
         fun_calls = []
         for node in walk(tree):
             if isinstance(node, Call):
-                callvisitor = FuncCallVisitor()
+                callvisitor = FunCallVisitor()
                 callvisitor.visit(node.func)
                 fun_calls.append(callvisitor.name)
 
         return fun_calls
 
     def is_deeper_than(prev_level, curr_line):
-        return get_re_len(match("(\s{" + str(prev_level + 1) + "})",
+        indent_level = get_indent_level(curr_line)
+        return get_re_len(match("^(\s{" + str(prev_level + 4) + "})",
                                 curr_line)) != 0
 
-    def _get_body_of(fun_name, contents):
+    def is_shallower_than(prev_level, curr_line):
+        # Catch empty lines.
+        if match("^\s*$", curr_line):
+            return False
+
+        curr_level = get_indent_level(curr_line)
+        return curr_level < prev_level
+
+    def get_body_of(fun_name, contents):
         lines = contents.splitlines()
         for i, line in enumerate(lines):
-            if is_fun_definition_of(fun_name, line):
-                indent_level = get_re_len(get_indentation(line))
-                fun_lines = get_fun_lines(i, lines, indent_level)
+            if Parser.is_fun_def_of(fun_name, line):
+                indent_level = get_indent_level(line)
+                fun_lines = Parser.get_fun_lines(i, lines, indent_level)
                 fun_body = "\n".join(fun_lines)
 
                 return fun_body
@@ -86,13 +117,20 @@ class Parser(object):
         contents = file.read()
 
         print("Parsing function names from " + str(file_path) + ".")
-        fun_names = Parser._get_fun_names(contents)
+        fun_names = Parser.get_fun_names(contents)
 
         print("Parsing function calls from " + str(file_path) + ".")
         call_network = {}
         for fun_name in tqdm(fun_names, file = stdout):
-            fun_body = Parser._get_body_of(fun_name, contents)
-            fun_calls = Parser._get_fun_calls(fun_body)
+            if "." in fun_name:
+                prefix = fun_name.split('.')[0]
+                suffix = fun_name.split('.')[1]
+
+                fun_body = Parser.get_body_of(suffix, contents)
+            else:
+                fun_body = Parser.get_body_of(fun_name, contents)
+
+            fun_calls = Parser.get_fun_calls(fun_body)
             call_network[fun_name] = fun_calls
 
         # }
@@ -101,7 +139,7 @@ class Parser(object):
         return call_network
 
 
-class FuncCallVisitor(NodeVisitor):
+class FunCallVisitor(NodeVisitor):
     def __init__(self):
         self._name = deque()
 
