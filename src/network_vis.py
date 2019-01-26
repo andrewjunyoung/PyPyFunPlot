@@ -1,19 +1,13 @@
-#from plotly import __version__
 #from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 
-# import plotly
-# import plotly.graph_objs as go
-
-# plotly.offline.plot({
-#     "data": [go.Scatter(x=[6, 2, 3, 4], y=[4, 3, 2, 1])],
-#     "layout": go.Layout(title="hello world")
-# }, auto_open=True)
-
 import networkx as nx
+import plotly
+import plotly.graph_objs as go
+import random
 
 mydict =	{
-  "fun1": ["fun2"],
-  "fun2": ["fun3"],
+  "fun1": ["fun2", "fun2", "fun3", "fun5", "fun6"],
+  "fun2": ["fun3", "fun5"],
   "fun3": [],
   "fun4": ["funprint"]
 }
@@ -31,8 +25,7 @@ def get_digraph_from_dict(fun_dict):
 
     #Add all nodes
     all_funs = get_unique_fun_from_dict(fun_dict)
-    #[print(fun) for fun in all_funs]
-    [g.add_node(fun) for fun in all_funs]
+    [g.add_node(fun, x=random.uniform(0, 1), y=random.uniform(0, 1)) for fun in all_funs]
     
     #Add edges
     for key in fun_dict.keys():
@@ -41,4 +34,65 @@ def get_digraph_from_dict(fun_dict):
     return g
 
 g = get_digraph_from_dict(mydict)
-print(g.number_of_edges())
+
+def plot_digraph(g):
+
+    #Add nodes as a scatter trace
+    node_trace = go.Scatter(
+        x=[],
+        y=[],
+        text=[],
+        mode='markers',
+        hoverinfo='text',
+        marker=dict(
+            colorscale='Bluered',
+            color=[],
+            showscale=True,
+            size=20,
+            colorbar=dict(
+                thickness=15,
+                title='Nr functions called by',
+                xanchor='left',
+                titleside='right'
+                ),
+            line=dict(width=2)
+        ),
+    )
+
+    for node in g.nodes():
+        x = g.node[node]['x']
+        y = g.node[node]['y']
+        node_name = node
+        node_trace['x'] += tuple([x])
+        node_trace['y'] += tuple([y])
+        node_trace['text'] += tuple([node_name])
+
+    for node, adj in enumerate(g.adjacency()):
+        node_trace['marker']['color'] += tuple([len(adj[1])])
+
+    #Add edges
+    edge_dict_list = []
+    for edge in g.edges():
+        x0 = g.node[edge[0]]['x']
+        y0 = g.node[edge[0]]['y']
+        x1 = g.node[edge[1]]['x']
+        y1 = g.node[edge[1]]['y']
+        edge_dict_list.append(dict(ax=x0, ay=y0, axref='x', ayref='y',
+                x=x1, y=y1, xref='x', yref='y'))
+
+    fig = go.Figure(data=[node_trace],
+             layout=go.Layout(
+                title='<br>Digraph of function calls',
+                titlefont=dict(size=14),
+                hovermode='closest',
+                showlegend=False,
+                margin=dict(b=25,l=10,r=10,t=45),
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                annotations = edge_dict_list
+             )                
+    )
+
+    plotly.offline.plot(fig, filename='networkx')
+
+plot_digraph(g)
