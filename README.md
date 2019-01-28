@@ -19,7 +19,7 @@ Current features include:
 * Nodes are sized by their centrality (their importance in the network). We calculate this by the page rank score of function in the network, as Google uses.
 * Nodes are colored and clustered by their class affiliation.
 
-## How I built it
+## How we built it
 
 Python, using the grammar of python for reference, and a self-made parser-lexer. This parses the python project it's targeted at, creates a network diagram, and puts this network diagram into HTML so that it can be viewed and interacted with in the browser.
 
